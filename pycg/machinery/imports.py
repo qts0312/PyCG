@@ -217,10 +217,17 @@ class ImportManager(object):
         self.old_path = copy.deepcopy(sys.path)
 
         loader_details = loader, importlib.machinery.all_suffixes()
-        sys.path_hooks.insert(
-            0, importlib.machinery.FileFinder.path_hook(loader_details)
-        )
-        sys.path.insert(0, os.path.abspath(self.mod_dir))
+        base_hook = importlib.machinery.FileFinder.path_hook(loader_details)
+        mod_dir_abs = os.path.abspath(self.mod_dir)
+
+        # Only apply our custom loader to the project directory.
+        def selective_path_hook(path):
+            if os.path.abspath(path) == mod_dir_abs:
+                return base_hook(path)
+            raise ImportError
+
+        sys.path_hooks.insert(0, selective_path_hook)
+        sys.path.insert(0, mod_dir_abs)
 
         self._clear_caches()
 

@@ -141,6 +141,10 @@ class CallGraphGenerator(object):
             if input_mod not in modules_analyzed:
                 if install_hooks:
                     self.import_manager.set_pkg(input_pkg)
+                    self.import_manager.set_current_mod(input_mod, input_file)
+                    if not self.import_manager.get_node(input_mod):
+                        self.import_manager.create_node(input_mod)
+                        self.import_manager.set_filepath(input_mod, input_file)
                     self.import_manager.install_hooks()
 
                 processor = cls(
@@ -174,7 +178,8 @@ class CallGraphGenerator(object):
         while (self.max_iter < 0 or iter_cnt < self.max_iter) and (
             not self.has_converged()
         ):
-            self.state = self.extract_state()
+            if iter_cnt >= 4:
+                break
             self.reset_counters()
             self.do_pass(
                 PostProcessor,
